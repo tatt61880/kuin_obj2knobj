@@ -1,0 +1,4 @@
+func Main()
+	var obj: Obj@CObj :: (#Obj@CObj).Load("Res/mybox.obj")
+	do obj.ToKnobj("Res/mybox.knobj")
+end func

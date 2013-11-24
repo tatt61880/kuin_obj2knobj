@@ -1,0 +1,168 @@
+{
+	Obj.kn v1.00 (for Kuin 1.00):
+		Last Modified: 2013/11/24 22:15:18.
+		Created by Tatt(@tatt61880)
+		https://twitter.com/tatt61880
+		https://github.com/tatt61880
+
+	objファイルを扱うライブラリです。
+}
+
+func Load(path: []char): @CObj
+	return (#@CObj).Load(path)
+end func
+
+class CObj()
+	var v: []cVector
+	var uv: []cVector2D
+	var vn: []cVector
+	var f: []cFacet
+	func Load(path: []char): @CObj
+		var stream: File@CLoadStream :: File@LoadFileStream(path)
+		if(stream =& null)
+			return null
+		end if
+		do this.v :: [(#cVector).Init(0.0, 0.0, 0.0)]cVector
+		do this.uv :: [(#cVector2D).Init(0.0, 0.0)]cVector2D
+		do this.vn :: [(#cVector).Init(0.0, 0.0, 0.0)]cVector
+		do this.f :: #[0]cFacet
+		const n: int :: 3 {三角形限定}
+		var posIdSet: []cPosIdSet :: #[n]cPosIdSet
+		foreach p(posIdSet)
+			do p :: #cPosIdSet
+		end foreach
+		var str: []char
+		var p1: int :: 0
+		var p2: int :: 0
+
+		do stream.SetSplitChars(" \n")
+		try
+			while a()
+				switch(stream.ReadStr())
+				case("v")
+					do this.v :~ [(#cVector).Init(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat())]cVector
+				case("vn")
+					do this.vn :~ [(#cVector).Init(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat())]cVector
+				case("f")
+					for i(0, n - 1)
+						do str :: stream.ReadStr()
+						for j(0, str.Len() - 1)
+							if(str[j] = '/')
+								if(p1 = 0)
+									do p1 :: j
+									continue j
+								else
+									do p2 :: j
+									break j
+								end if
+							end if
+						end for
+						var s1: []char :: str.Sub(0, p1)
+						var s2: []char :: (p2 - p1 <> 1) ?(str.Sub(p1 + 1, p2 - p1 - 1), "0")
+						var s3: []char :: (str.Len() - p2 <> 1) ?(str.Sub(p2 + 1, str.Len() - p2 - 1), "0")
+						do p1 :: 0
+						{
+						do posIdSet[i].v :: s1$ int
+						do posIdSet[i].uv :: s2$ int
+						do posIdSet[i].vn :: s3$ int
+						}
+						do posIdSet[i].vId :: ToInt(s1)
+						do posIdSet[i].uvId :: ToInt(s2)
+						do posIdSet[i].vnId :: ToInt(s3)
+						func ToInt(s: []char): int
+							var ret: int :: 0
+							foreach c(s)
+								do ret :: ret * 10 + c$ int - '0'$ int
+							end foreach
+							return ret
+						end func
+					end for
+					do this.f :~ [(#cFacet).Init(posIdSet)]cFacet
+				end switch
+			end while
+		catch()
+			do Dbg@Log("[EOF?]")
+		end try
+
+		return this
+	end func
+
+	class cVector()
+		var x: float
+		var y: float
+		var z: float
+		func Init(x: float, y: float, z: float): cVector
+			do this.x :: x
+			do this.y :: y
+			do this.z :: z
+			return this
+		end func
+	end class
+	class cVector2D()
+		var x: float
+		var y: float
+		func Init(x: float, y: float): cVector2D
+			do this.x :: x
+			do this.y :: y
+			return this
+		end func
+	end class
+
+	class cPosIdSet()
+		var vId: int
+		var uvId: int
+		var vnId: int
+		func Init(vId: int, uvId: int, vnId: int): cPosIdSet
+			do this.vId :: vId
+			do this.uvId :: uvId
+			do this.vnId :: vnId
+			return this
+		end func
+	end class
+
+	class cFacet()
+		var positions: []cPosIdSet
+		func Init(ps: []cPosIdSet): cFacet
+			do this.positions :: ##ps
+			return this
+		end func
+	end class
+
+	func ToKnobj(path: []char)
+		do Dbg@Log("ToKnobj(\"" ~ path ~ "\")")
+		var bin: []byte8 :: #[0]byte8
+		do bin :~ 0 .ToBins()
+		do bin :~ 1 .ToBins()
+		do bin :~ this.f.Len().ToBins()
+		foreach f(this.f)
+			for i(2, 0, -1)
+				do bin :~ ##DoubleToBin(this.v[f.positions[i].vId].x)
+				do bin :~ ##DoubleToBin(this.v[f.positions[i].vId].y)
+				do bin :~ ##DoubleToBin(this.v[f.positions[i].vId].z)
+				do bin :~ ##DoubleToBin(this.uv[f.positions[i].uvId].x)
+				do bin :~ ##DoubleToBin(this.uv[f.positions[i].uvId].y)
+				do bin :~ ##DoubleToBin(this.vn[f.positions[i].vnId].x)
+				do bin :~ ##DoubleToBin(this.vn[f.positions[i].vnId].y)
+				do bin :~ ##DoubleToBin(this.vn[f.positions[i].vnId].z)
+			end for
+		end foreach
+		do File@WriteFile(path, bin)
+
+		func DoubleToBin(f: float): []byte8
+			if(f = 0.0)
+				return (0$ byte64).ToBins()
+			end if
+			var pow: int :: Lib@Floor(Lib@Log((f > 0.0) ?(f, -f), 2.0))
+			var val: float :: f * 2.0 ^(-pow$ float) * ((f > 0.0) ?(1.0, -1.0))
+			var b: byte64 :: ((f > 0.0) ?(0$ byte64, (16#8$ byte64).Shl(60))).Or(((pow + 1023)$ byte64).Shl(52))
+			var b2: byte64
+			for(0, 50)
+				do val :* 2.0
+				do b2 :: b2.Or((val$ byte64).And(1$ byte64))
+				do b2 :: b2.Shl(1)
+			end for
+			return (b.Or(b2)).ToBins()
+		end func
+	end func
+end class
+
