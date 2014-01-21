@@ -1,4 +1,10 @@
 func Main()
-	var obj: Obj@CObj :: (#Obj@CObj).Load("Res/mybox.obj")
-	do obj.ToKnobj("Res/mybox.knobj")
+	var name: []char :: "mybox"
+	do Dbg@Log("Res/" ~ name ~ ".obj")
+	var obj: Obj@CObj :: (#Obj@CObj).Load("Res/" ~ name ~ ".obj")
+	if(obj <>& null)
+		do obj.ToKnobj("Res/" ~ name ~ ".knobj")
+	else
+		do Dbg@Log("Error: CObj is null.")
+	end if
 end func

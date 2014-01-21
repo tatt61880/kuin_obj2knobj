@@ -1,6 +1,6 @@
 {
 	Obj.kn v1.00 (for Kuin 1.00):
-		Last Modified: 2014/01/17 02:03:12.
+		Last Modified: 2014/01/21 18:04:56.
 		Created by Tatt(@tatt61880)
 		https://twitter.com/tatt61880
 		https://github.com/tatt61880
@@ -38,16 +38,33 @@ class CObj()
 		do stream.SetSplitChars(" \n")
 		try
 			while a()
-				switch(stream.ReadStr())
+				do str :: stream.ReadStr()
+				if(str =& null)
+					break a
+				end if
+				switch(str)
 				case("v")
 					do this.v :~ [(#cVector).Init(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat())]cVector
-				case("vn")
-					do this.vn :~ [(#cVector).Init(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat())]cVector
 				case("uv")
 					do this.uv :~ [(#cVector2D).Init(stream.ReadFloat(), stream.ReadFloat())]cVector2D
+				case("vn")
+					do this.vn :~ [(#cVector).Init(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat())]cVector
 				case("f")
 					for i(0, n - 1)
 						do str :: stream.ReadStr()
+						if(countSlash(str) <> 2)
+							do Dbg@Log("Error: f format error. It must be \"f v/uv/vn v/uv/vn v/uv/vn\". (f-id " ~ this.f.Len().ToStr() ~ ")")
+							continue a
+						end if
+						func countSlash(str: []char): int
+							var ret: int
+							foreach c(str)
+								if(c = '/')
+									do ret :+ 1
+								end if
+							end foreach
+							return ret
+						end func
 						for j(0, str.Len() - 1)
 							if(str[j] = '/')
 								if(p1 = 0)
@@ -71,7 +88,7 @@ class CObj()
 				end switch
 			end while
 		catch()
-			do Dbg@Log("[EOF?]")
+			do Dbg@Log("Error: Unexpected error. Please tell me (@tatt61880) the info.")
 		end try
 
 		return this
@@ -119,22 +136,35 @@ class CObj()
 	end class
 
 	func ToKnobj(path: []char)
-		do Dbg@Log("ToKnobj(\"" ~ path ~ "\")")
 		var bin: []byte8 :: #[0]byte8
 		do bin :~ 0 .ToBins()
 		do bin :~ 1 .ToBins()
 		do bin :~ this.f.Len().ToBins()
+		var fId: int :: 1
 		foreach f(this.f)
 			for i(2, 0, -1)
-				do bin :~ (this.v[f.positions[i].vId].x).ToBins()
-				do bin :~ (this.v[f.positions[i].vId].y).ToBins()
-				do bin :~ (this.v[f.positions[i].vId].z).ToBins()
-				do bin :~ (this.uv[f.positions[i].uvId].x).ToBins()
-				do bin :~ (this.uv[f.positions[i].uvId].y).ToBins()
-				do bin :~ (this.vn[f.positions[i].vnId].x).ToBins()
-				do bin :~ (this.vn[f.positions[i].vnId].y).ToBins()
-				do bin :~ (this.vn[f.positions[i].vnId].z).ToBins()
+				if(f.positions[i].vId < this.v.Len())
+					do bin :~ (this.v[f.positions[i].vId].x).ToBins()
+					do bin :~ (this.v[f.positions[i].vId].y).ToBins()
+					do bin :~ (this.v[f.positions[i].vId].z).ToBins()
+				else
+					do Dbg@Log("Error: Invalid  v-id " ~ f.positions[i].vId.ToStr()  ~ " (f-id " ~ fId.ToStr() ~")")
+				end if
+				if(f.positions[i].uvId < this.uv.Len())
+					do bin :~ (this.uv[f.positions[i].uvId].x).ToBins()
+					do bin :~ (this.uv[f.positions[i].uvId].y).ToBins()
+				else
+					do Dbg@Log("Error: Invalid uv-id " ~ f.positions[i].uvId.ToStr() ~ " (f-id " ~ fId.ToStr() ~")")
+				end if
+				if(f.positions[i].vnId < this.vn.Len())
+					do bin :~ (this.vn[f.positions[i].vnId].x).ToBins()
+					do bin :~ (this.vn[f.positions[i].vnId].y).ToBins()
+					do bin :~ (this.vn[f.positions[i].vnId].z).ToBins()
+				else
+					do Dbg@Log("Error: Invalid vn-id " ~ f.positions[i].vnId.ToStr() ~ " (f-id " ~ fId.ToStr() ~")")
+				end if
 			end for
+			do fId :+ 1
 		end foreach
 		do File@WriteFile(path, bin)
 	end func
