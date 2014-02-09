@@ -1,3 +1,5 @@
 Data/*
 *.exe
+*.obj
+*.knobj
 Dbg.txt

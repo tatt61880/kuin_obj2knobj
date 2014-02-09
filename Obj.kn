@@ -1,6 +1,6 @@
 {
-	Obj.kn v1.00 (for Kuin 1.00):
-		Last Modified: 2014/01/21 18:04:56.
+	Obj.kn v1.01 (for Kuin 1.01):
+		Last Modified: 2014/02/09 23:56:44.
 		Created by Tatt(@tatt61880)
 		https://twitter.com/tatt61880
 		https://github.com/tatt61880
@@ -22,10 +22,10 @@ class CObj()
 		if(stream =& null)
 			return null
 		end if
-		do this.v :: [(#cVector).Init(0.0, 0.0, 0.0)]cVector
-		do this.uv :: [(#cVector2D).Init(0.0, 0.0)]cVector2D
-		do this.vn :: [(#cVector).Init(0.0, 0.0, 0.0)]cVector
-		do this.f :: #[0]cFacet
+		do me.v :: [(#cVector).Init(0.0, 0.0, 0.0)]
+		do me.uv :: [(#cVector2D).Init(0.0, 0.0)]
+		do me.vn :: [(#cVector).Init(0.0, 0.0, 0.0)]
+		do me.f :: #[0]cFacet
 		const n: int :: 3 {三角形限定}
 		var posIdSet: []cPosIdSet :: #[n]cPosIdSet
 		foreach p(posIdSet)
@@ -44,16 +44,16 @@ class CObj()
 				end if
 				switch(str)
 				case("v")
-					do this.v :~ [(#cVector).Init(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat())]cVector
+					do me.v :~ [(#cVector).Init(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat())]
 				case("uv")
-					do this.uv :~ [(#cVector2D).Init(stream.ReadFloat(), stream.ReadFloat())]cVector2D
+					do me.uv :~ [(#cVector2D).Init(stream.ReadFloat(), stream.ReadFloat())]
 				case("vn")
-					do this.vn :~ [(#cVector).Init(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat())]cVector
+					do me.vn :~ [(#cVector).Init(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat())]
 				case("f")
 					for i(0, n - 1)
 						do str :: stream.ReadStr()
 						if(countSlash(str) <> 2)
-							do Dbg@Log("Error: f format error. It must be \"f v/uv/vn v/uv/vn v/uv/vn\". (f-id " ~ this.f.Len().ToStr() ~ ")")
+							do Dbg@Log("Error: f format error. It must be \"f v/uv/vn v/uv/vn v/uv/vn\". (f-id " ~ me.f.Len().ToStr() ~ ")")
 							continue a
 						end if
 						func countSlash(str: []char): int
@@ -84,14 +84,14 @@ class CObj()
 						do posIdSet[i].uvId :: s2 $ int
 						do posIdSet[i].vnId :: s3 $ int
 					end for
-					do this.f :~ [(#cFacet).Init(posIdSet)]cFacet
+					do me.f :~ [(#cFacet).Init(posIdSet)]
 				end switch
 			end while
 		catch()
 			do Dbg@Log("Error: Unexpected error. Please tell me (@tatt61880) the info.")
 		end try
 
-		return this
+		return me
 	end func
 
 	class cVector()
@@ -99,19 +99,19 @@ class CObj()
 		var y: float
 		var z: float
 		func Init(x: float, y: float, z: float): cVector
-			do this.x :: x
-			do this.y :: y
-			do this.z :: z
-			return this
+			do me.x :: x
+			do me.y :: y
+			do me.z :: z
+			return me
 		end func
 	end class
 	class cVector2D()
 		var x: float
 		var y: float
 		func Init(x: float, y: float): cVector2D
-			do this.x :: x
-			do this.y :: y
-			return this
+			do me.x :: x
+			do me.y :: y
+			return me
 		end func
 	end class
 
@@ -120,18 +120,18 @@ class CObj()
 		var uvId: int
 		var vnId: int
 		func Init(vId: int, uvId: int, vnId: int): cPosIdSet
-			do this.vId :: vId
-			do this.uvId :: uvId
-			do this.vnId :: vnId
-			return this
+			do me.vId :: vId
+			do me.uvId :: uvId
+			do me.vnId :: vnId
+			return me
 		end func
 	end class
 
 	class cFacet()
 		var positions: []cPosIdSet
 		func Init(ps: []cPosIdSet): cFacet
-			do this.positions :: ##ps
-			return this
+			do me.positions :: ##ps
+			return me
 		end func
 	end class
 
@@ -139,27 +139,27 @@ class CObj()
 		var bin: []byte8 :: #[0]byte8
 		do bin :~ 0 .ToBins()
 		do bin :~ 1 .ToBins()
-		do bin :~ this.f.Len().ToBins()
+		do bin :~ me.f.Len().ToBins()
 		var fId: int :: 1
-		foreach f(this.f)
+		foreach f(me.f)
 			for i(2, 0, -1)
-				if(f.positions[i].vId < this.v.Len())
-					do bin :~ (this.v[f.positions[i].vId].x).ToBins()
-					do bin :~ (this.v[f.positions[i].vId].y).ToBins()
-					do bin :~ (this.v[f.positions[i].vId].z).ToBins()
+				if(f.positions[i].vId < me.v.Len())
+					do bin :~ (me.v[f.positions[i].vId].x).ToBins()
+					do bin :~ (me.v[f.positions[i].vId].y).ToBins()
+					do bin :~ (me.v[f.positions[i].vId].z).ToBins()
 				else
 					do Dbg@Log("Error: Invalid  v-id " ~ f.positions[i].vId.ToStr()  ~ " (f-id " ~ fId.ToStr() ~")")
 				end if
-				if(f.positions[i].uvId < this.uv.Len())
-					do bin :~ (this.uv[f.positions[i].uvId].x).ToBins()
-					do bin :~ (this.uv[f.positions[i].uvId].y).ToBins()
+				if(f.positions[i].uvId < me.uv.Len())
+					do bin :~ (me.uv[f.positions[i].uvId].x).ToBins()
+					do bin :~ (me.uv[f.positions[i].uvId].y).ToBins()
 				else
 					do Dbg@Log("Error: Invalid uv-id " ~ f.positions[i].uvId.ToStr() ~ " (f-id " ~ fId.ToStr() ~")")
 				end if
-				if(f.positions[i].vnId < this.vn.Len())
-					do bin :~ (this.vn[f.positions[i].vnId].x).ToBins()
-					do bin :~ (this.vn[f.positions[i].vnId].y).ToBins()
-					do bin :~ (this.vn[f.positions[i].vnId].z).ToBins()
+				if(f.positions[i].vnId < me.vn.Len())
+					do bin :~ (me.vn[f.positions[i].vnId].x).ToBins()
+					do bin :~ (me.vn[f.positions[i].vnId].y).ToBins()
+					do bin :~ (me.vn[f.positions[i].vnId].z).ToBins()
 				else
 					do Dbg@Log("Error: Invalid vn-id " ~ f.positions[i].vnId.ToStr() ~ " (f-id " ~ fId.ToStr() ~")")
 				end if

@@ -1,10 +1,32 @@
+func Init(cfg: Kuin@CCfg)
+	do cfg.Title :: "Obj2knobj.exe"
+end func
+
 func Main()
-	var name: []char :: "mybox"
-	do Dbg@Log("Res/" ~ name ~ ".obj")
-	var obj: Obj@CObj :: (#Obj@CObj).Load("Res/" ~ name ~ ".obj")
-	if(obj <>& null)
-		do obj.ToKnobj("Res/" ~ name ~ ".knobj")
+	if(Kuin@GetCmdLines().Len() > 1)
+		var arg: []char
+		for i(1, Kuin@GetCmdLines().Len() - 1)
+			do arg :: Kuin@GetCmdLines()[i]
+			if(arg.Len() > 4)
+				if(arg.Sub(arg.Len() - 4, 4) = ".obj")
+					do convert(arg)
+				end if
+			end if
+		end for
 	else
-		do Dbg@Log("Error: CObj is null.")
+		do Dbg@Log("Usage: Obj2knobj.exe file.obj")
+	{
+		do convert("Res/mybox.obj")
+	}
 	end if
+
+	func convert(path: []char)
+		do Dbg@Log(path)
+		var obj: Obj@CObj :: (#Obj@CObj).Load(path)
+		if(obj <>& null)
+			do obj.ToKnobj(path.Sub(0, path.Len() - 4) ~ ".knobj")
+		else
+			do Dbg@Log("Error: CObj is null.")
+		end if
+	end func
 end func
