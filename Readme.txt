@@ -1,20 +1,20 @@
-Obj.kn v1.00 (for Kuin 1.00):
-    Last Modified: 2014/01/06 19:13:37.
-    Created by Tatt(@tatt61880)
-    https://twitter.com/tatt61880
-    https://github.com/tatt61880
+Obj.kn v1.01 (for Kuin 1.01):
+	Last Modified: 2014/02/13 22:36:55.
+	Created by Tatt(@tatt61880)
+	https://twitter.com/tatt61880
+	https://github.com/tatt61880
 
 objファイルをknobjファイルに変換するプログラムです。
 
 ファイルの説明:
-    Obj.kn
-        objファイルを扱うライブラリです。
+	Obj.kn
+		objファイルを扱うライブラリです。
 
-    Obj2knobj.kn
-        mybox.objを読み込んで、mybox.knobjを作成します。
+	Obj2knobj.kn
+		Obj2knobj.exeにドラッグ＆ドロップされたobjファイルを元にknobjファイルを作成します。
 
-    Resフォルダ
-        Obj2knobj.exe で使用するファイル(mybox.obj)が入っています。
+	Resフォルダ
+		Obj2knobj.exe で使用するファイル(mybox.obj)が入っています。
 
 Spetial Thanks, cohfinさん for the Info below.
 struct knobj {
