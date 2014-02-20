@@ -1,6 +1,6 @@
 {
-	Obj.kn v1.01 (for Kuin 1.01):
-		Last Modified: 2014/02/09 23:56:44.
+	Obj.kn v1.10 (for Kuin 1.01):
+		Last Modified: 2014/02/21 00:43:20.
 		Created by Tatt(@tatt61880)
 		https://twitter.com/tatt61880
 		https://github.com/tatt61880
@@ -16,20 +16,20 @@ class CObj()
 	var v: []cVector
 	var uv: []cVector2D
 	var vn: []cVector
-	var f: []cFacet
+	var f: []@CFacet
 	func Load(path: []char): @CObj
 		var stream: File@CLoadStream :: File@LoadFileStream(path)
 		if(stream =& null)
 			return null
 		end if
-		do me.v :: [(#cVector).Init(0.0, 0.0, 0.0)]
+		do me.v  :: [(#cVector).Init(0.0, 0.0, 0.0)]
 		do me.uv :: [(#cVector2D).Init(0.0, 0.0)]
 		do me.vn :: [(#cVector).Init(0.0, 0.0, 0.0)]
-		do me.f :: #[0]cFacet
+		do me.f :: #[0]@CFacet
 		const n: int :: 3 {三角形限定}
-		var posIdSet: []cPosIdSet :: #[n]cPosIdSet
+		var posIdSet: []@CPosIdSet :: #[n]@CPosIdSet
 		foreach p(posIdSet)
-			do p :: #cPosIdSet
+			do p :: #@CPosIdSet
 		end foreach
 		var str: []char
 		var p1: int :: 0
@@ -44,7 +44,7 @@ class CObj()
 				end if
 				switch(str)
 				case("v")
-					do me.v :~ [(#cVector).Init(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat())]
+					do me.v  :~ [(#cVector).Init(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat())]
 				case("uv")
 					do me.uv :~ [(#cVector2D).Init(stream.ReadFloat(), stream.ReadFloat())]
 				case("vn")
@@ -84,7 +84,7 @@ class CObj()
 						do posIdSet[i].uvId :: s2 $ int
 						do posIdSet[i].vnId :: s3 $ int
 					end for
-					do me.f :~ [(#cFacet).Init(posIdSet)]
+					do me.f :~ [(#@CFacet).Init(posIdSet)]
 				end switch
 			end while
 		catch()
@@ -104,6 +104,15 @@ class CObj()
 			do me.z :: z
 			return me
 		end func
+		-+func Cmp(t: cVector): int
+			if(me.x = t.x & me.y = t.y & me.z = t.z)
+				return 0
+			elif(me.x > t.x | (me.x = t.x & (me.y > t.y | me.y = t.y & me.z > t.z)))
+				return 1
+			elif(me.x < t.x)
+				return -1
+			end if
+		end func
 	end class
 	class cVector2D()
 		var x: float
@@ -113,25 +122,14 @@ class CObj()
 			do me.y :: y
 			return me
 		end func
-	end class
-
-	class cPosIdSet()
-		var vId: int
-		var uvId: int
-		var vnId: int
-		func Init(vId: int, uvId: int, vnId: int): cPosIdSet
-			do me.vId :: vId
-			do me.uvId :: uvId
-			do me.vnId :: vnId
-			return me
-		end func
-	end class
-
-	class cFacet()
-		var positions: []cPosIdSet
-		func Init(ps: []cPosIdSet): cFacet
-			do me.positions :: ##ps
-			return me
+		-+func Cmp(t: cVector2D): int
+			if(me.x = t.x & me.y = t.y)
+				return 0
+			elif(me.x > t.x | (me.x = t.x & me.y > t.y))
+				return 1
+			else
+				return -1
+			end if
 		end func
 	end class
 
@@ -142,6 +140,19 @@ class CObj()
 		do bin :~ me.f.Len().ToBins()
 		var fId: int :: 1
 		foreach f(me.f)
+			if(uvCheck(me, f) = false)
+				do Dbg@Log("[Obj.kn] Error: uvCheck = false")
+				return
+			end if
+			func uvCheck(m: @CObj, f: @CFacet): bool
+				if(m.uv[f.positions[0].uvId] = m.uv[f.positions[1].uvId])
+					return false
+				end if
+				if(m.uv[f.positions[1].uvId] = m.uv[f.positions[2].uvId])
+					return false
+				end if
+				return true
+			end func
 			for i(2, 0, -1)
 				if(f.positions[i].vId < me.v.Len())
 					do bin :~ (me.v[f.positions[i].vId].x).ToBins()
@@ -170,3 +181,22 @@ class CObj()
 	end func
 end class
 
+-class CFacet()
+	var positions: []@CPosIdSet
+	func Init(ps: []@CPosIdSet): @CFacet
+		do me.positions :: ##ps
+		return me
+	end func
+end class
+
+-class CPosIdSet()
+	var vId: int
+	var uvId: int
+	var vnId: int
+	func Init(vId: int, uvId: int, vnId: int): @CPosIdSet
+		do me.vId :: vId
+		do me.uvId :: uvId
+		do me.vnId :: vnId
+		return me
+	end func
+end class

@@ -1,5 +1,5 @@
-Obj.kn v1.01 (for Kuin 1.01):
-	Last Modified: 2014/02/13 22:43:39.
+Obj.kn v1.10 (for Kuin 1.01):
+	Last Modified: 2014/02/21 00:42:30.
 	Created by Tatt(@tatt61880)
 	https://twitter.com/tatt61880
 	https://github.com/tatt61880
