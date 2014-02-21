@@ -1,6 +1,6 @@
 {
-	Obj.kn v1.10 (for Kuin 1.01):
-		Last Modified: 2014/02/21 00:43:20.
+	Obj.kn v1.11 (for Kuin 1.01):
+		Last Modified: 2014/02/21 18:36:28.
 		Created by Tatt(@tatt61880)
 		https://twitter.com/tatt61880
 		https://github.com/tatt61880
@@ -109,7 +109,7 @@ class CObj()
 				return 0
 			elif(me.x > t.x | (me.x = t.x & (me.y > t.y | me.y = t.y & me.z > t.z)))
 				return 1
-			elif(me.x < t.x)
+			else
 				return -1
 			end if
 		end func
@@ -140,20 +140,18 @@ class CObj()
 		do bin :~ me.f.Len().ToBins()
 		var fId: int :: 1
 		foreach f(me.f)
-			if(uvCheck(me, f) = false)
-				do Dbg@Log("[Obj.kn] Error: uvCheck = false")
-				return
-			end if
-			func uvCheck(m: @CObj, f: @CFacet): bool
-				if(m.uv[f.positions[0].uvId] = m.uv[f.positions[1].uvId])
-					return false
+			for i(0, 2) {Check uv}
+				if(me.uv[f.positions[i].uvId] = me.uv[f.positions[(i + 1) % 3].uvId])
+					do Dbg@Log("[Obj.kn] Error: uv[" ~ f.positions[i].uvId.ToStr() ~ "] = uv[" ~ f.positions[(i + 1) % 3].uvId.ToStr() ~ "]")
+					return
 				end if
-				if(m.uv[f.positions[1].uvId] = m.uv[f.positions[2].uvId])
-					return false
-				end if
-				return true
-			end func
+			end for
 			for i(2, 0, -1)
+				if(me.vn[f.positions[i].vnId] = (#cVector).Init(0.0, 0.0, 0.0)) {Check nv <> [0.0, 0.0, 0.0]}
+					do Dbg@Log("[Obj.kn] Error: vn[" ~ f.positions[i].vnId.ToStr() ~ "] = [0,0, 0.0, 0.0]")
+					return
+				end if
+
 				if(f.positions[i].vId < me.v.Len())
 					do bin :~ (me.v[f.positions[i].vId].x).ToBins()
 					do bin :~ (me.v[f.positions[i].vId].y).ToBins()
@@ -177,6 +175,7 @@ class CObj()
 			end for
 			do fId :+ 1
 		end foreach
+		do Dbg@Log("# of triangles: " ~ (fId - 1).ToStr())
 		do File@WriteFile(path, bin)
 	end func
 end class
