@@ -15,9 +15,6 @@ func Main()
 		end for
 	else
 		do Dbg@Log("Usage: Obj2knobj.exe file.obj")
-	{
-		do convert("Res/mybox.obj")
-	}
 	end if
 
 	func convert(path: []char)
