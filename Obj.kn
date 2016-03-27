@@ -1,6 +1,6 @@
 {
-	Obj.kn v1.2 (for Kuin 1.01):
-		Last Modified: 2016/03/27 12:46:50.
+	Obj.kn v1.3 (for Kuin 1.01):
+		Last Modified: 2016/03/27 14:12:40.
 		Created by Tatt(@tatt61880)
 		https://twitter.com/tatt61880
 		https://github.com/tatt61880
@@ -27,6 +27,9 @@ class CObj()
 		do ss.WriteStr(logMessage ~ "\n")
 		do me.firstLogFlag :: false
 	end func
+	-func WarningLog(warningMessage: []char)
+		do me.Log("Warning: " ~ warningMessage)
+	end func
 	-func ErrorLog(errorMessage: []char)
 		do me.Log("Error: " ~ errorMessage)
 	end func
@@ -36,6 +39,7 @@ class CObj()
 		if(stream =& null)
 			return null
 		end if
+
 		do me.v  :: [(#cVector3D).Init(0.0, 0.0, 0.0)]
 		do me.uv :: [(#cVector2D).Init(0.0, 0.0)]
 		do me.vn :: [(#cVector3D).Init(0.0, 0.0, 0.0)]
@@ -47,17 +51,17 @@ class CObj()
 		foreach p(posIdSet)
 			do p :: #@CPosIdSet
 		end foreach
-		var str: []char
-		var p1: int :: -1
-		var p2: int :: 0
-
 		do stream.SetSplitChars(" \n")
 		try
-			while a()
-				do str :: stream.ReadStr()
+			var p1: int :: -1
+			var p2: int :: 0
+			while a(!stream.ChkEnd())
+				var currentPos: int :: stream.Tell()
+				var str: []char :: stream.ReadStr()
 				if(str =& null)
 					break a
 				end if
+
 				switch(str)
 				case("v")
 					do me.v  :~ [(#cVector3D).Init(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat())]
@@ -96,11 +100,19 @@ class CObj()
 						var s2: []char :: (p2 - p1 <> 1) ?(str.Sub(p1 + 1, p2 - p1 - 1), "0")
 						var s3: []char :: (str.Len() - p2 <> 1) ?(str.Sub(p2 + 1, str.Len() - p2 - 1), "0")
 						do p1 :: -1
-						do posIdSet[i].vId :: s1 $ int
+						do posIdSet[i] .vId :: s1 $ int
 						do posIdSet[i].uvId :: s2 $ int
 						do posIdSet[i].vnId :: s3 $ int
 					end for
 					do me.f :~ [(#cFacet).Init(posIdSet)]
+				default
+					if(str[0] <> '#')
+						do me.WarningLog("Line for unknown lavel: [" ~ str ~ "]")
+					end if
+					do stream.Seek(currentPos, File@EOrigin#Head)
+					do stream.SetSplitChars("\n")
+					do stream.ReadStr()
+					do stream.SetSplitChars(" \n")
 				end switch
 			end while
 		catch()
@@ -221,11 +233,11 @@ class CObj()
 end class
 
 -class CPosIdSet()
-	var vId: int
+	var  vId: int
 	var uvId: int
 	var vnId: int
 	func Init(vId: int, uvId: int, vnId: int): @CPosIdSet
-		do me.vId :: vId
+		do me. vId ::  vId
 		do me.uvId :: uvId
 		do me.vnId :: vnId
 		return me
