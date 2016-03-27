@@ -10,6 +10,8 @@ end func
 				if(arg.Sub(arg.Len() - 4, 4) = ".obj")
 					if(convert(arg))
 						do Dbg@Log("Secceeded in conversion.")
+					else
+						do Dbg@Log("Failed in conversion.")
 					end if
 				end if
 			end if

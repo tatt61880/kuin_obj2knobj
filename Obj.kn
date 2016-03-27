@@ -1,6 +1,6 @@
 {
 	Obj.kn v1.2 (for Kuin 1.01):
-		Last Modified: 2016/03/27 11:05:30.
+		Last Modified: 2016/03/27 12:19:17.
 		Created by Tatt(@tatt61880)
 		https://twitter.com/tatt61880
 		https://github.com/tatt61880
@@ -51,7 +51,7 @@ class CObj()
 			do p :: #@CPosIdSet
 		end foreach
 		var str: []char
-		var p1: int :: 0
+		var p1: int :: -1
 		var p2: int :: 0
 
 		do stream.SetSplitChars(" \n")
@@ -72,7 +72,7 @@ class CObj()
 					for i(0, n - 1)
 						do str :: stream.ReadStr()
 						if(countSlash(str) <> 2)
-							do me.ErrorLog("f format error. It must be \"f v/[uv]/vn v/[uv]/vn v/[uv]/vn\". (f-id " ~ me.f.Len().ToStr() ~ ")")
+							do me.ErrorLog("f format error. It must be \"f v/[uv]/[vn] v/[uv]/[vn] v/[uv]/[vn]\". (f-id " ~ me.f.Len().ToStr() ~ ")")
 							continue a
 						end if
 						func countSlash(str: []char): int
@@ -86,7 +86,7 @@ class CObj()
 						end func
 						for j(0, str.Len() - 1)
 							if(str[j] = '/')
-								if(p1 = 0)
+								if(p1 = -1)
 									do p1 :: j
 									continue j
 								else
@@ -95,10 +95,10 @@ class CObj()
 								end if
 							end if
 						end for
-						var s1: []char :: str.Sub(0, p1)
+						var s1: []char :: (p1 <> 0) ?(str.Sub(0, p1), "")
 						var s2: []char :: (p2 - p1 <> 1) ?(str.Sub(p1 + 1, p2 - p1 - 1), "0")
 						var s3: []char :: (str.Len() - p2 <> 1) ?(str.Sub(p2 + 1, str.Len() - p2 - 1), "0")
-						do p1 :: 0
+						do p1 :: -1
 						do posIdSet[i].vId :: s1 $ int
 						do posIdSet[i].uvId :: s2 $ int
 						do posIdSet[i].vnId :: s3 $ int
@@ -123,6 +123,9 @@ class CObj()
 			do me.z :: z
 			return me
 		end func
+		func ToStr(): []char
+			return "[" ~ me.x.ToStr() ~ ", " ~ me.y.ToStr() ~ ", " ~ me.z.ToStr() ~ "]"
+		end func
 		-+func Cmp(t: cVector3D): int
 			if(me.x = t.x & me.y = t.y & me.z = t.z)
 				return 0
@@ -140,6 +143,9 @@ class CObj()
 			do me.x :: x
 			do me.y :: y
 			return me
+		end func
+		func ToStr(): []char
+			return "[" ~ me.x.ToStr() ~ ", " ~ me.y.ToStr() ~ "]"
 		end func
 		-+func Cmp(t: cVector2D): int
 			if(me.x = t.x & me.y = t.y)
@@ -169,13 +175,12 @@ class CObj()
 			foreach f(me.f)
 				for i(0, 2) {Check uv}
 					if(me.uv[f.positions[i].uvId] = me.uv[f.positions[(i + 1) % 3].uvId])
-						do me.WarningLog("uv[" ~ f.positions[i].uvId.ToStr() ~ "] = uv[" ~ f.positions[(i + 1) % 3].uvId.ToStr() ~ "]")
+						do me.WarningLog("uv[" ~ f.positions[i].uvId.ToStr() ~ "] = uv[" ~ f.positions[(i + 1) % 3].uvId.ToStr() ~ "] = " ~ me.uv[f.positions[i].uvId].ToStr())
 					end if
 				end for
 				for i(2, 0, -1)
-					if(me.vn[f.positions[i].vnId] = (#cVector3D).Init(0.0, 0.0, 0.0)) {Check nv <> [0.0, 0.0, 0.0]}
-						do me.ErrorLog("vn[" ~ f.positions[i].vnId.ToStr() ~ "] = [0,0, 0.0, 0.0]")
-						return false
+					if(me.vn[f.positions[i].vnId] = (#cVector3D).Init(0.0, 0.0, 0.0))
+						do me.WarningLog("vn[" ~ f.positions[i].vnId.ToStr() ~ "] = [0.0, 0.0, 0.0]")
 					end if
 
 					if(f.positions[i].vId < me.v.Len())
