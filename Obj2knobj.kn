@@ -6,7 +6,7 @@ end func
 	if(Kuin@GetCmdLines().Len() > 1)
 		for i(1, Kuin@GetCmdLines().Len() - 1)
 			var arg: []char :: Kuin@GetCmdLines()[i]
-			if(arg.Len() > 4)
+			if(arg.Len() >= 4)
 				if(arg.Sub(arg.Len() - 4, 4) = ".obj")
 					if(convert(arg))
 						do Dbg@Log("Secceeded in conversion.")
