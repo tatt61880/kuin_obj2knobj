@@ -2,5 +2,6 @@ Data/*
 Rls/*
 *.exe
 *.obj
+*.log
 *.knobj
 Dbg.txt

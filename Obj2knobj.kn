@@ -1,15 +1,16 @@
-func Init(cfg: Kuin@CCfg)
+-func Init(cfg: Kuin@CCfg)
 	do cfg.Title :: "Obj2knobj.exe"
 end func
 
-func Main()
+-func Main()
 	if(Kuin@GetCmdLines().Len() > 1)
-		var arg: []char
 		for i(1, Kuin@GetCmdLines().Len() - 1)
-			do arg :: Kuin@GetCmdLines()[i]
+			var arg: []char :: Kuin@GetCmdLines()[i]
 			if(arg.Len() > 4)
 				if(arg.Sub(arg.Len() - 4, 4) = ".obj")
-					do convert(arg)
+					if(convert(arg))
+						do Dbg@Log("Secceeded in conversion.")
+					end if
 				end if
 			end if
 		end for
@@ -17,13 +18,13 @@ func Main()
 		do Dbg@Log("Usage: Obj2knobj.exe file.obj")
 	end if
 
-	func convert(path: []char)
-		do Dbg@Log(path)
+	func convert(path: []char): bool
 		var obj: Obj@CObj :: (#Obj@CObj).Load(path)
 		if(obj <>& null)
-			do obj.ToKnobj(path.Sub(0, path.Len() - 4) ~ ".knobj")
+			return obj.ToKnobj(path.Sub(0, path.Len() - 4) ~ ".knobj")
 		else
 			do Dbg@Log("Error: CObj is null.")
+			return false
 		end if
 	end func
 end func

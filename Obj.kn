@@ -1,6 +1,6 @@
 {
-	Obj.kn v1.11 (for Kuin 1.01):
-		Last Modified: 2014/02/21 18:36:28.
+	Obj.kn v1.2 (for Kuin 1.01):
+		Last Modified: 2016/03/27 11:05:30.
 		Created by Tatt(@tatt61880)
 		https://twitter.com/tatt61880
 		https://github.com/tatt61880
@@ -13,19 +13,38 @@ func Load(path: []char): @CObj
 end func
 
 class CObj()
-	var v: []cVector
-	var uv: []cVector2D
-	var vn: []cVector
-	var f: []@CFacet
+	-var  v: []cVector3D
+	-var uv: []cVector2D
+	-var vn: []cVector3D
+	-var  f: []cFacet
+
+	-var firstLogFlag: bool
+	-var logPath: []char
+
+	-func Log(logMessage: []char)
+		do Dbg@Log("[Obj.kn] " ~ logMessage)
+		var ss: File@CSaveStream :: File@SaveFileStream(me.logPath, !me.firstLogFlag)
+		do ss.WriteStr(logMessage ~ "\n")
+		do me.firstLogFlag :: false
+	end func
+	-func WarningLog(errorMessage: []char)
+		do me.Log("Warning: " ~ errorMessage)
+	end func
+	-func ErrorLog(errorMessage: []char)
+		do me.Log("Error: " ~ errorMessage)
+	end func
+
 	func Load(path: []char): @CObj
 		var stream: File@CLoadStream :: File@LoadFileStream(path)
 		if(stream =& null)
 			return null
 		end if
-		do me.v  :: [(#cVector).Init(0.0, 0.0, 0.0)]
+		do me.v  :: [(#cVector3D).Init(0.0, 0.0, 0.0)]
 		do me.uv :: [(#cVector2D).Init(0.0, 0.0)]
-		do me.vn :: [(#cVector).Init(0.0, 0.0, 0.0)]
-		do me.f :: #[0]@CFacet
+		do me.vn :: [(#cVector3D).Init(0.0, 0.0, 0.0)]
+		do me.f :: #[0]cFacet
+		do me.firstLogFlag :: true
+		do me.logPath :: path ~ ".log"
 		const n: int :: 3 {三角形限定}
 		var posIdSet: []@CPosIdSet :: #[n]@CPosIdSet
 		foreach p(posIdSet)
@@ -44,16 +63,16 @@ class CObj()
 				end if
 				switch(str)
 				case("v")
-					do me.v  :~ [(#cVector).Init(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat())]
+					do me.v  :~ [(#cVector3D).Init(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat())]
 				case("uv")
 					do me.uv :~ [(#cVector2D).Init(stream.ReadFloat(), stream.ReadFloat())]
 				case("vn")
-					do me.vn :~ [(#cVector).Init(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat())]
+					do me.vn :~ [(#cVector3D).Init(stream.ReadFloat(), stream.ReadFloat(), stream.ReadFloat())]
 				case("f")
 					for i(0, n - 1)
 						do str :: stream.ReadStr()
 						if(countSlash(str) <> 2)
-							do Dbg@Log("Error: f format error. It must be \"f v/uv/vn v/uv/vn v/uv/vn\". (f-id " ~ me.f.Len().ToStr() ~ ")")
+							do me.ErrorLog("f format error. It must be \"f v/[uv]/vn v/[uv]/vn v/[uv]/vn\". (f-id " ~ me.f.Len().ToStr() ~ ")")
 							continue a
 						end if
 						func countSlash(str: []char): int
@@ -84,27 +103,27 @@ class CObj()
 						do posIdSet[i].uvId :: s2 $ int
 						do posIdSet[i].vnId :: s3 $ int
 					end for
-					do me.f :~ [(#@CFacet).Init(posIdSet)]
+					do me.f :~ [(#cFacet).Init(posIdSet)]
 				end switch
 			end while
 		catch()
-			do Dbg@Log("Error: Unexpected error. Please tell me (@tatt61880) the info.")
+			do me.ErrorLog("Unexpected error. Please tell me (@tatt61880) the info.")
 		end try
 
 		return me
 	end func
 
-	class cVector()
+	class cVector3D()
 		var x: float
 		var y: float
 		var z: float
-		func Init(x: float, y: float, z: float): cVector
+		func Init(x: float, y: float, z: float): cVector3D
 			do me.x :: x
 			do me.y :: y
 			do me.z :: z
 			return me
 		end func
-		-+func Cmp(t: cVector): int
+		-+func Cmp(t: cVector3D): int
 			if(me.x = t.x & me.y = t.y & me.z = t.z)
 				return 0
 			elif(me.x > t.x | (me.x = t.x & (me.y > t.y | me.y = t.y & me.z > t.z)))
@@ -132,59 +151,68 @@ class CObj()
 			end if
 		end func
 	end class
+	class cFacet()
+		var positions: []@CPosIdSet
+		func Init(ps: []@CPosIdSet): cFacet
+			do me.positions :: ##ps
+			return me
+		end func
+	end class
 
-	func ToKnobj(path: []char)
-		var bin: []byte8 :: #[0]byte8
-		do bin :~ 0 .ToBins()
-		do bin :~ 1 .ToBins()
-		do bin :~ me.f.Len().ToBins()
-		var fId: int :: 1
-		foreach f(me.f)
-			for i(0, 2) {Check uv}
-				if(me.uv[f.positions[i].uvId] = me.uv[f.positions[(i + 1) % 3].uvId])
-					do Dbg@Log("[Obj.kn] Error: uv[" ~ f.positions[i].uvId.ToStr() ~ "] = uv[" ~ f.positions[(i + 1) % 3].uvId.ToStr() ~ "]")
-					return
-				end if
-			end for
-			for i(2, 0, -1)
-				if(me.vn[f.positions[i].vnId] = (#cVector).Init(0.0, 0.0, 0.0)) {Check nv <> [0.0, 0.0, 0.0]}
-					do Dbg@Log("[Obj.kn] Error: vn[" ~ f.positions[i].vnId.ToStr() ~ "] = [0,0, 0.0, 0.0]")
-					return
-				end if
+	func ToKnobj(path: []char): bool
+		try
+			var bin: []byte8 :: #[0]byte8
+			do bin :~ (0).ToBins()
+			do bin :~ (1).ToBins()
+			do bin :~ me.f.Len().ToBins()
+			var fId: int :: 1
+			foreach f(me.f)
+				for i(0, 2) {Check uv}
+					if(me.uv[f.positions[i].uvId] = me.uv[f.positions[(i + 1) % 3].uvId])
+						do me.WarningLog("uv[" ~ f.positions[i].uvId.ToStr() ~ "] = uv[" ~ f.positions[(i + 1) % 3].uvId.ToStr() ~ "]")
+					end if
+				end for
+				for i(2, 0, -1)
+					if(me.vn[f.positions[i].vnId] = (#cVector3D).Init(0.0, 0.0, 0.0)) {Check nv <> [0.0, 0.0, 0.0]}
+						do me.ErrorLog("vn[" ~ f.positions[i].vnId.ToStr() ~ "] = [0,0, 0.0, 0.0]")
+						return false
+					end if
 
-				if(f.positions[i].vId < me.v.Len())
-					do bin :~ (me.v[f.positions[i].vId].x).ToBins()
-					do bin :~ (me.v[f.positions[i].vId].y).ToBins()
-					do bin :~ (me.v[f.positions[i].vId].z).ToBins()
-				else
-					do Dbg@Log("Error: Invalid  v-id " ~ f.positions[i].vId.ToStr()  ~ " (f-id " ~ fId.ToStr() ~")")
-				end if
-				if(f.positions[i].uvId < me.uv.Len())
-					do bin :~ (me.uv[f.positions[i].uvId].x).ToBins()
-					do bin :~ (me.uv[f.positions[i].uvId].y).ToBins()
-				else
-					do Dbg@Log("Error: Invalid uv-id " ~ f.positions[i].uvId.ToStr() ~ " (f-id " ~ fId.ToStr() ~")")
-				end if
-				if(f.positions[i].vnId < me.vn.Len())
-					do bin :~ (me.vn[f.positions[i].vnId].x).ToBins()
-					do bin :~ (me.vn[f.positions[i].vnId].y).ToBins()
-					do bin :~ (me.vn[f.positions[i].vnId].z).ToBins()
-				else
-					do Dbg@Log("Error: Invalid vn-id " ~ f.positions[i].vnId.ToStr() ~ " (f-id " ~ fId.ToStr() ~")")
-				end if
-			end for
-			do fId :+ 1
-		end foreach
-		do Dbg@Log("# of triangles: " ~ (fId - 1).ToStr())
-		do File@WriteFile(path, bin)
-	end func
-end class
+					if(f.positions[i].vId < me.v.Len())
+						do bin :~ (me.v[f.positions[i].vId].x).ToBins()
+						do bin :~ (me.v[f.positions[i].vId].y).ToBins()
+						do bin :~ (me.v[f.positions[i].vId].z).ToBins()
+					else
+						do me.ErrorLog("Invalid  v-id " ~ f.positions[i].vId.ToStr()  ~ " (f-id " ~ fId.ToStr() ~")")
+					end if
+					if(f.positions[i].uvId < me.uv.Len())
+						do bin :~ (me.uv[f.positions[i].uvId].x).ToBins()
+						do bin :~ (me.uv[f.positions[i].uvId].y).ToBins()
+					else
+						do me.ErrorLog("Invalid uv-id " ~ f.positions[i].uvId.ToStr() ~ " (f-id " ~ fId.ToStr() ~")")
+					end if
+					if(f.positions[i].vnId < me.vn.Len())
+						do bin :~ (me.vn[f.positions[i].vnId].x).ToBins()
+						do bin :~ (me.vn[f.positions[i].vnId].y).ToBins()
+						do bin :~ (me.vn[f.positions[i].vnId].z).ToBins()
+					else
+						do me.ErrorLog("Invalid vn-id " ~ f.positions[i].vnId.ToStr() ~ " (f-id " ~ fId.ToStr() ~")")
+					end if
+				end for
+				do fId :+ 1
+			end foreach
 
--class CFacet()
-	var positions: []@CPosIdSet
-	func Init(ps: []@CPosIdSet): @CFacet
-		do me.positions :: ##ps
-		return me
+			try
+				do File@WriteFile(path, bin)
+				do me.Log("Created " ~ path ~ " (" ~ (fId - 1).ToStr() ~ "triangles)")
+				return true
+			catch()
+				do me.ErrorLog("File open failed. [" ~ path ~ "]")
+			end try
+		catch()
+			do me.ErrorLog("Failed to convert.")
+		end try
+		return false
 	end func
 end class
 
